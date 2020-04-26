@@ -1,2 +1,2 @@
-# Guer
-Guer is Golang development framework.
+# Guerd
+Guerd is Golang development framework.
