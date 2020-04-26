@@ -2,12 +2,14 @@ package ws
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gorilla/websocket"
 	"net/http"
-	"strconv"
 	"sync"
 )
+
+//type WsServer struct {
+//	http http.Server
+//}
 
 //Websocket连接池
 type Client struct {
@@ -33,7 +35,6 @@ type Message struct {
 	Data []byte
 }
 
-//ws服务初始化
 /**
  * 封装ws握手，维护连接池
  * @param resp      http.ResponseWriter
@@ -72,8 +73,8 @@ func Handshake(
 //维护新的连接
 func (wsConn *Connection) procLoop(onOpen func(conn Connection), onMessage func(conn Connection, msg Message), onClose func(conn Connection)) {
 
-	fd := strconv.Itoa(wsConn.Fd)
-	fmt.Println("新的连接:" + fd)
+	//fd := strconv.Itoa(wsConn.Fd)
+	//fmt.Println("新的连接:" + fd)
 
 	//新连接事件
 	onOpen(*wsConn)
