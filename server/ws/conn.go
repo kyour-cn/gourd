@@ -7,11 +7,11 @@ import (
 
 // Websocket连接
 type Connection struct {
-	Fd        int
-	WsSocket  *websocket.Conn // 底层websocket
-	mutex     sync.Mutex      // 避免重复关闭管道
-	isClosed  bool
-	closeChan chan byte // 关闭通知
+	Fd       uint32
+	WsSocket *websocket.Conn // 底层websocket
+	mutex    sync.Mutex      // 避免重复关闭管道
+	isClosed bool
+	//closeChan chan byte // 关闭通知
 }
 
 //ws连接发送消息

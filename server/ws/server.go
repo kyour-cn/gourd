@@ -15,8 +15,8 @@ import (
 type Client struct {
 	mu      sync.Mutex
 	conn    []*Connection
-	count   int //连接数量
-	fdIndex int // fd自动递增
+	count   int    //连接数量
+	fdIndex uint32 // fd自动递增
 }
 
 var Clients Client
@@ -53,10 +53,10 @@ func Handshake(
 	}
 
 	wsConn := &Connection{
-		WsSocket:  wsSocket,
-		closeChan: make(chan byte),
-		isClosed:  false,
-		Fd:        Clients.fdIndex,
+		WsSocket: wsSocket,
+		//closeChan: make(chan byte),
+		isClosed: false,
+		Fd:       Clients.fdIndex,
 	}
 
 	//将连接加入连接池
@@ -116,7 +116,7 @@ func (wsConn *Connection) procLoop(onOpen func(conn Connection), onMessage func(
 }
 
 //根据fd取得ws连接
-func FindClient(fd int) Connection {
+func FindClient(fd uint32) Connection {
 
 	var c Connection
 	for k, v := range Clients.conn {
@@ -129,7 +129,7 @@ func FindClient(fd int) Connection {
 }
 
 //根据fd查到连接发送消息
-func SendWsMessage(fd int, msg string) error {
+func SendWsMessage(fd uint32, msg string) error {
 	conn := FindClient(fd)
 
 	err := conn.Send(websocket.TextMessage, []byte(msg))
@@ -138,4 +138,12 @@ func SendWsMessage(fd int, msg string) error {
 	}
 
 	return nil
+}
+
+//获取连接池自增Id并加一
+func GetPoolIndex(client Client) uint32 {
+
+	client.fdIndex++
+	return client.fdIndex
+
 }

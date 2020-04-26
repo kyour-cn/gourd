@@ -7,11 +7,11 @@ import (
 
 // Tcp连接
 type Connection struct {
-	Fd        int
-	Socket    net.Conn   // 底层websocket
-	mutex     sync.Mutex // 避免重复关闭管道
-	isClosed  bool
-	closeChan chan byte // 关闭通知
+	Fd       uint32
+	Addr     string
+	Socket   net.Conn   // 底层websocket
+	mutex    sync.Mutex // 避免重复关闭管道
+	isClosed bool
 }
 
 //ws连接获取消息
