@@ -1,5 +1,14 @@
 package tcp
 
+/**
+ * This file is part of Guerd.
+ *
+ * @link     http://guerd.kyour.cn
+ * @document http://guerd.kyour.cn/doc
+ * @contact  kyour@vip.qq.com
+ * @license  https://https://github.com/kyour-cn/guerd/blob/master/LICENSE
+ */
+
 import (
 	"fmt"
 	"net"
@@ -75,7 +84,6 @@ func Connect(conn Connection, onConnect func(conn Connection), onReceive func(co
 
 		n, err := conn.Socket.Read(buffer)
 		if err != nil {
-			//fmt.Println("Read Error.")
 			break
 		}
 
