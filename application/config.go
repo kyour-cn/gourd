@@ -1,4 +1,4 @@
-package guerd
+package application
 
 /**
  * This file is part of Guerd.
@@ -10,14 +10,22 @@ package guerd
  */
 
 import (
-	app_http "github.com/kyour-cn/guerd/application/app-http"
 	"github.com/kyour-cn/guerd/application/app-tcp"
 	"github.com/kyour-cn/guerd/utils/toml"
 	"log"
 )
 
+//Http服务配置信息
+type HttpConfig struct {
+	Enable   bool     `toml:"enable"`
+	Addr     []string `toml:"addr,omitempty"`
+	WsEnable bool     `toml:"websocket"`
+	Path     string   `toml:"path"`
+	Index    string   `toml:"index"`
+}
+
 type Config struct {
-	Http app_http.HttpConfig
+	Http HttpConfig
 	Tcp  app_tcp.TcpConfig
 }
 

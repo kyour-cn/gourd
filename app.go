@@ -11,8 +11,11 @@ package guerd
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
+	"github.com/kyour-cn/guerd/application"
 	"github.com/kyour-cn/guerd/application/app-http"
 	app_tcp "github.com/kyour-cn/guerd/application/app-tcp"
+	"github.com/kyour-cn/guerd/application/common"
 	"time"
 )
 
@@ -41,6 +44,8 @@ type Application struct {
 	Name     string
 	Debug    bool
 	ConfPath string
+	Router   mux.Router
+	Config   application.Config
 }
 
 //创建Application
@@ -51,6 +56,8 @@ func NewApp() Application {
 		Debug:    false,
 		ConfPath: "./app.conf",
 	}
+
+	//common.SetApp(app)
 
 	return app
 }
@@ -72,14 +79,15 @@ func (app *Application) Serve() {
 	var errors []error
 
 	//获取配置
-	config := readConfig(app.ConfPath)
+	config := common.ReadConfig(app.ConfPath)
 	fmt.Printf("%v", config)
 
 	fmt.Printf(logo, version, config.Http.Addr, config.Tcp.Addr)
 
-	//启动http服务
+	//启动http\ws服务
 	go func() {
-		err := app_http.Serve(config.Http)
+
+		err := app_http.Serve(&config.Http, &app.Router)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -87,7 +95,7 @@ func (app *Application) Serve() {
 
 	//启动Tcp服务
 	go func() {
-		err := app_tcp.Serve(config.Tcp)
+		err := app_tcp.Serve(&config.Tcp)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -105,4 +113,9 @@ func (app *Application) Serve() {
 		}
 	}
 
+}
+
+//设定路由
+func (app *Application) HttpRoute(LoadRouter func() (route *mux.Router)) {
+	app.Router = *LoadRouter()
 }

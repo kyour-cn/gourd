@@ -20,7 +20,7 @@ type TcpConfig struct {
 	Addr   string `toml:"addr"`
 }
 
-func Serve(config TcpConfig) (err error) {
+func Serve(config *TcpConfig) (err error) {
 
 	server, err := tcp.Listen("tcp", config.Addr)
 	if err != nil {

@@ -10,31 +10,33 @@ package app_http
  */
 
 import (
+	"github.com/gorilla/mux"
+	"github.com/kyour-cn/guerd/application"
 	"net/http"
+	"time"
 )
 
-//Http服务配置信息
-type HttpConfig struct {
-	Enable   bool     `toml:"enable"`
-	Addr     []string `toml:"addr,omitempty"`
-	WsEnable bool     `toml:"websocket"`
-}
-
-func Serve(config HttpConfig) (err error) {
+func Serve(config *application.HttpConfig, router *mux.Router) (err error) {
 
 	if !config.Enable {
 		//不启用
 		return
 	}
 
-	//文件服务
-	http.Handle("/", http.FileServer(http.Dir("./public")))
+	for _, addr := range config.Addr {
+		//监听多个地址
+		srv := &http.Server{
+			Handler: router,
+			Addr:    addr,
+			// Good practice: enforce timeouts for servers you create!
+			WriteTimeout: 15 * time.Second,
+			ReadTimeout:  15 * time.Second,
+		}
+		go func() {
+			err = srv.ListenAndServe()
+		}()
 
-	//ws服务
-	//http.HandleFunc("/ws", websocketHandle)
-
-	//创建监听端口
-	err = http.ListenAndServe(":8100", nil)
+	}
 
 	return
 }
