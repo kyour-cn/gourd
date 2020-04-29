@@ -20,9 +20,9 @@ type TcpServer struct {
 }
 
 type Event struct {
-	onConnect func(conn Connection)
-	onReceive func(conn Connection, buffer []byte)
-	onClose   func(conn Connection)
+	OnConnect func(conn Connection)
+	OnReceive func(conn Connection, buffer []byte)
+	OnClose   func(conn Connection)
 }
 
 //客户端连接池
@@ -48,9 +48,9 @@ func Listen(network string, addr string) (server TcpServer, err error) {
 	return
 }
 
+//onConnect func(conn Connection), onReceive func(conn Connection, buffer []byte), onClose func(conn Connection)
 //封装tcp连接池管理
-func Accept(server TcpServer, onConnect func(conn Connection),
-	onReceive func(conn Connection, buffer []byte), onClose func(conn Connection)) {
+func Accept(server TcpServer, event Event) {
 
 	for {
 		conn, e := server.Listen.Accept()
@@ -73,7 +73,7 @@ func Accept(server TcpServer, onConnect func(conn Connection),
 		Clients.mu.Unlock()
 
 		//新的连接
-		go Connect(*tcpConn, onConnect, onReceive, onClose)
+		go Connect(*tcpConn, event.OnConnect, event.OnReceive, event.OnClose)
 	}
 }
 

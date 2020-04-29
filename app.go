@@ -13,9 +13,11 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/kyour-cn/gourd/application"
+	app_cron "github.com/kyour-cn/gourd/application/app-cron"
 	app_http "github.com/kyour-cn/gourd/application/app-http"
 	app_tcp "github.com/kyour-cn/gourd/application/app-tcp"
 	"github.com/kyour-cn/gourd/application/common"
+	"github.com/kyour-cn/gourd/server/tcp"
 	"time"
 )
 
@@ -44,6 +46,7 @@ type Application struct {
 	Debug    bool
 	ConfPath string
 	Router   mux.Router
+	TcpEvent tcp.Event
 	Config   application.Config
 }
 
@@ -53,7 +56,7 @@ func NewApp() Application {
 	app := Application{
 		Name:     "Gourd App",
 		Debug:    false,
-		ConfPath: "./app.conf",
+		ConfPath: "./conf/app.conf",
 	}
 
 	return app
@@ -66,6 +69,7 @@ func (app *Application) getVersion() string {
 
 //设定配置文件
 func (app *Application) ConfigFile(path string) {
+
 	app.ConfPath = path
 
 }
@@ -94,12 +98,15 @@ func (app *Application) Serve() {
 	//启动Tcp服务
 	if config.Tcp.Enable {
 		go func() {
-			err := app_tcp.Serve(&config.Tcp)
+			err := app_tcp.Serve(&config.Tcp, &app.TcpEvent)
 			if err != nil {
 				errors = append(errors, err)
 			}
 		}()
 	}
+
+	//启动Crontab任务
+	app_cron.Start()
 
 	//阻塞应用 - 每一秒检查是否有报错并输出
 	for {
@@ -115,7 +122,7 @@ func (app *Application) Serve() {
 
 }
 
-//设定路由
+//设定Http路由
 func (app *Application) HttpRoute(LoadRouter func() (route *mux.Router)) {
 
 	config := common.ReadConfig(app.ConfPath)
@@ -124,4 +131,16 @@ func (app *Application) HttpRoute(LoadRouter func() (route *mux.Router)) {
 	if config.Http.Enable {
 		app.Router = *LoadRouter()
 	}
+}
+
+//设定Tcp事件
+func (app *Application) RegistTcp(e tcp.Event) {
+
+	config := common.ReadConfig(app.ConfPath)
+
+	//判断tcp开启
+	if config.Tcp.Enable {
+		app.TcpEvent = e
+	}
+
 }
