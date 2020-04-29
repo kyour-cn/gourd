@@ -1,26 +1,21 @@
 package app_tcp
 
-import (
-	"fmt"
-	"github.com/kyour-cn/guerd/server/tcp"
-)
-
 /**
- * This file is part of Guerd.
+ * This file is part of Gourd.
  *
- * @link     http://guerd.kyour.cn
- * @document http://guerd.kyour.cn/doc
+ * @link     http://gourd.kyour.cn
+ * @document http://gourd.kyour.cn/doc
  * @contact  kyour@vip.qq.com
- * @license  https://https://github.com/kyour-cn/guerd/blob/master/LICENSE
+ * @license  https://https://github.com/kyour-cn/gourd/blob/master/LICENSE
  */
 
-//Http服务配置信息
-type TcpConfig struct {
-	Enable bool   `toml:"enable"`
-	Addr   string `toml:"addr"`
-}
+import (
+	"fmt"
+	"github.com/kyour-cn/gourd/application"
+	"github.com/kyour-cn/gourd/server/tcp"
+)
 
-func Serve(config *TcpConfig) (err error) {
+func Serve(config *application.TcpConfig) (err error) {
 
 	server, err := tcp.Listen("tcp", config.Addr)
 	if err != nil {

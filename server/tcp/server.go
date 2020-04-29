@@ -1,12 +1,12 @@
 package tcp
 
 /**
- * This file is part of Guerd.
+ * This file is part of Gourd.
  *
- * @link     http://guerd.kyour.cn
- * @document http://guerd.kyour.cn/doc
+ * @link     http://gourd.kyour.cn
+ * @document http://gourd.kyour.cn/doc
  * @contact  kyour@vip.qq.com
- * @license  https://https://github.com/kyour-cn/guerd/blob/master/LICENSE
+ * @license  https://https://github.com/kyour-cn/gourd/blob/master/LICENSE
  */
 
 import (
@@ -19,11 +19,17 @@ type TcpServer struct {
 	Listen net.Listener
 }
 
+type Event struct {
+	onConnect func(conn Connection)
+	onReceive func(conn Connection, buffer []byte)
+	onClose   func(conn Connection)
+}
+
 //客户端连接池
 type Client struct {
 	mu      sync.Mutex
-	conn    []Connection
-	count   uint32 //连接数量
+	Conn    []Connection
+	Count   uint32 //连接数量
 	fdIndex uint32 // fd自动递增
 }
 
@@ -43,7 +49,8 @@ func Listen(network string, addr string) (server TcpServer, err error) {
 }
 
 //封装tcp连接池管理
-func Accept(server TcpServer, onConnect func(conn Connection), onReceive func(conn Connection, buffer []byte), onClose func(conn Connection)) {
+func Accept(server TcpServer, onConnect func(conn Connection),
+	onReceive func(conn Connection, buffer []byte), onClose func(conn Connection)) {
 
 	for {
 		conn, e := server.Listen.Accept()
@@ -55,24 +62,32 @@ func Accept(server TcpServer, onConnect func(conn Connection), onReceive func(co
 		tcpConn := &Connection{
 			Socket:   conn,
 			isClosed: false,
-			Fd:       Clients.fdIndex,
+			Fd:       Clients.GetPoolIndex(),
 			Addr:     conn.RemoteAddr().String(),
 		}
+
+		//将连接加入连接池
+		Clients.mu.Lock() //加锁，避免资源争夺
+		Clients.Count++   //连接数量
+		Clients.Conn = append(Clients.Conn, *tcpConn)
+		Clients.mu.Unlock()
 
 		//新的连接
 		go Connect(*tcpConn, onConnect, onReceive, onClose)
 	}
 }
 
-//新连接
-func Connect(conn Connection, onConnect func(conn Connection), onReceive func(conn Connection, buffer []byte), onClose func(conn Connection)) {
+//获取连接池自增Id并加一
+func (c *Client) GetPoolIndex() uint32 {
 
-	//将连接加入连接池
-	Clients.mu.Lock() //加锁，避免资源争夺
-	Clients.fdIndex++ //自增ID
-	Clients.count++   //连接数量
-	Clients.conn = append(Clients.conn, conn)
-	Clients.mu.Unlock()
+	c.fdIndex++
+	return c.fdIndex
+
+}
+
+//新连接
+func Connect(conn Connection, onConnect func(conn Connection),
+	onReceive func(conn Connection, buffer []byte), onClose func(conn Connection)) {
 
 	//新的连接
 	onConnect(conn)
@@ -96,5 +111,12 @@ func Connect(conn Connection, onConnect func(conn Connection), onReceive func(co
 
 	//客户端断开
 	_ = conn.Socket.Close()
+
+	//将对象从连接池中移除
+	for k, v := range Clients.Conn {
+		if v == conn {
+			Clients.Conn = append(Clients.Conn[:k], Clients.Conn[k+1:]...)
+		}
+	}
 
 }

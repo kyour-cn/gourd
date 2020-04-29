@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/kyour-cn/guerd/application"
-	"github.com/kyour-cn/guerd/utils/toml"
+	"github.com/kyour-cn/gourd/application"
+	"github.com/kyour-cn/gourd/utils/toml"
 	"log"
 )
 

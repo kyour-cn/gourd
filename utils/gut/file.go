@@ -1,12 +1,12 @@
 package gut
 
 /**
- * This file is part of Guerd.
+ * This file is part of Gourd.
  *
- * @link     http://guerd.kyour.cn
- * @document http://guerd.kyour.cn/doc
+ * @link     http://gourd.kyour.cn
+ * @document http://gourd.kyour.cn/doc
  * @contact  kyour@vip.qq.com
- * @license  https://https://github.com/kyour-cn/guerd/blob/master/LICENSE
+ * @license  https://https://github.com/kyour-cn/gourd/blob/master/LICENSE
  */
 
 import (

@@ -1,22 +1,23 @@
 package app_http
 
 /**
- * This file is part of Guerd.
+ * This file is part of Gourd.
  *
- * @link     http://guerd.kyour.cn
- * @document http://guerd.kyour.cn/doc
+ * @link     http://gourd.kyour.cn
+ * @document http://gourd.kyour.cn/doc
  * @contact  kyour@vip.qq.com
- * @license  https://https://github.com/kyour-cn/guerd/blob/master/LICENSE
+ * @license  https://https://github.com/kyour-cn/gourd/blob/master/LICENSE
  */
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/kyour-cn/guerd/application"
+	"github.com/kyour-cn/gourd/application"
 	"net/http"
 	"time"
 )
 
-func Serve(config *application.HttpConfig, router *mux.Router) (err error) {
+func Serve(config *application.HttpConfig, router *mux.Router) (error error) {
 
 	if !config.Enable {
 		//不启用
@@ -32,8 +33,14 @@ func Serve(config *application.HttpConfig, router *mux.Router) (err error) {
 			WriteTimeout: 15 * time.Second,
 			ReadTimeout:  15 * time.Second,
 		}
+
 		go func() {
-			err = srv.ListenAndServe()
+			err := srv.ListenAndServe()
+			if err != nil {
+				error = err
+				fmt.Printf("Gourd_Error:%v\n", err)
+			}
+
 		}()
 
 	}

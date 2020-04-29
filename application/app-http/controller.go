@@ -1,20 +1,24 @@
 package app_http
 
 /**
- * This file is part of Guerd.
+ * This file is part of Gourd.
  *
- * @link     http://guerd.kyour.cn
- * @document http://guerd.kyour.cn/doc
+ * @link     http://gourd.kyour.cn
+ * @document http://gourd.kyour.cn/doc
  * @contact  kyour@vip.qq.com
- * @license  https://https://github.com/kyour-cn/guerd/blob/master/LICENSE
+ * @license  https://https://github.com/kyour-cn/gourd/blob/master/LICENSE
  */
 
 import (
-	"github.com/kyour-cn/guerd/application/common"
+	"github.com/kyour-cn/gourd/application/common"
 	"net/http"
 	"os"
 	"path/filepath"
 )
+
+//func ControllerMiddleware(route *mux.Router, m *map[string]func(w http.ResponseWriter, r *http.Request)) {
+//
+//}
 
 func FileMiddleware(w http.ResponseWriter, r *http.Request) {
 
