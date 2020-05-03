@@ -1,13 +1,4 @@
-package app_http
-
-/**
- * This file is part of Gourd.
- *
- * @link     http://gourd.kyour.cn
- * @document http://gourd.kyour.cn/doc
- * @contact  kyour@vip.qq.com
- * @license  https://https://github.com/kyour-cn/gourd/blob/master/LICENSE
- */
+package middleware
 
 import (
 	"github.com/kyour-cn/gourd/application"
@@ -16,10 +7,6 @@ import (
 	"os"
 	"path/filepath"
 )
-
-//func ControllerMiddleware(route *router.Router, m *map[string]func(w http.ResponseWriter, r *http.Request)) {
-//
-//}
 
 func FileMiddleware(w http.ResponseWriter, r *http.Request) {
 
@@ -59,7 +46,4 @@ func FileMiddleware(w http.ResponseWriter, r *http.Request) {
 
 	http.ServeFile(w, r, path)
 
-}
-
-type Controller struct {
 }

@@ -11,23 +11,32 @@ package app_http
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
 	"github.com/kyour-cn/gourd/application"
+	"github.com/kyour-cn/gourd/server/router"
+	"github.com/kyour-cn/gourd/server/session"
+	_ "github.com/kyour-cn/gourd/server/session/memory"
 	"net/http"
 	"time"
 )
 
-func Serve(config *application.HttpConfig, router *mux.Router) (error error) {
+func Serve(config *application.HttpConfig, router *router.Router) (error error) {
 
 	if !config.Enable {
 		//不启用
 		return
 	}
 
+	//初始化Session -暂时放这里
+	session.Init()
+
+	//router.Use()
+
+	//hh := middleware.Handler{}
+
 	for _, addr := range config.Addr {
 		//监听多个地址
 		srv := &http.Server{
-			Handler: router,
+			Handler: router, //router
 			Addr:    addr,
 			// Good practice: enforce timeouts for servers you create!
 			WriteTimeout: 15 * time.Second,
