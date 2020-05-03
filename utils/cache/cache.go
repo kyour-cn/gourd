@@ -217,7 +217,6 @@ func (c *Cache) Save(w io.Writer) (err error) {
 	enc := gob.NewEncoder(w)
 	defer func() {
 		if x := recover(); x != nil {
-
 			err = errors.New("Error registering item types with Gob library")
 		}
 	}()
@@ -271,8 +270,8 @@ func (c *Cache) Load(r io.Reader) error {
 // 从文件中加载缓存数据项
 func (c *Cache) LoadFile(file string) error {
 
-	//c.mu.Lock()
-	//defer c.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	f, err := os.Open(file)
 	if err != nil {

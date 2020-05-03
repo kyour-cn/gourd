@@ -14,7 +14,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 	"github.com/kyour-cn/gourd/common"
 	"io"
 	"net/http"
@@ -36,6 +35,10 @@ type Provider interface {
 	SessionDestroy(sid string) error
 	//回收
 	SessionGC(maxLifeTime int64)
+	//保存到文件
+	SaveToFile(path string) error
+	//从文件加载
+	LoadFile(file string) error
 }
 
 //Session操作接口
@@ -60,6 +63,7 @@ type Config struct {
 	Expiration int    `toml:"expiration"`
 	SaveFile   string `toml:"savefile_path"`
 	SaveCycle  int    `toml:"savefile_cycle"`
+	Enable     bool   `toml:"enable"`
 }
 
 //初始化，创建容器
@@ -70,24 +74,31 @@ func Init() {
 
 	//log.Printf("Session:%v", config)
 
+	if !config.Enable {
+		//不启用Session
+		return
+	}
+
 	provide, _ := provides["memory"]
 
 	manager = &Manager{cookieName: config.Sessname, provider: provide, maxLifeTime: int64(time.Duration(config.Expiration) * time.Second)}
+
+	_ = manager.provider.LoadFile(config.SaveFile)
 
 	go manager.GC()
 
 }
 
 //实例化一个session管理器
-func NewSessionManager(provideName, cookieName string, maxLifeTime int64) (*Manager, error) {
-
-	provide, ok := provides[provideName]
-	if !ok {
-		return nil, fmt.Errorf("session: unknown provide %q ", provideName)
-	}
-
-	return &Manager{cookieName: cookieName, provider: provide, maxLifeTime: maxLifeTime}, nil
-}
+//func NewSessionManager(provideName, cookieName string, maxLifeTime int64) (*Manager, error) {
+//
+//	provide, ok := provides[provideName]
+//	if !ok {
+//		return nil, fmt.Errorf("session: unknown provide %q ", provideName)
+//	}
+//
+//	return &Manager{cookieName: cookieName, provider: provide, maxLifeTime: maxLifeTime}, nil
+//}
 
 //Session中间件
 //判断当前请求的cookie中是否存在有效的session，存在返回，否则创建
@@ -196,13 +207,30 @@ func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 //垃圾回收机制
 func (manager *Manager) GC() {
 
-	manager.lock.Lock()
-	defer manager.lock.Unlock()
+	go func() {
+		tick := time.NewTicker(time.Duration(config.SaveCycle) * time.Second)
+		for {
+			select {
+			case <-tick.C:
+				manager.lock.Lock()
 
-	manager.provider.SessionGC(manager.maxLifeTime)
+				manager.provider.SessionGC(int64(time.Duration(config.SaveCycle) * time.Second))
+				_ = manager.provider.SaveToFile(config.SaveFile)
 
-	time.AfterFunc(time.Duration(manager.maxLifeTime), func() {
-		manager.GC()
-	})
+				manager.lock.Unlock()
+
+			}
+		}
+	}()
+
+	//manager.lock.Lock()
+	//defer manager.lock.Unlock()
+	//
+	//
+	//manager.provider.SessionGC(int64(time.Duration(config.SaveCycle) * time.Second))
+	//
+	//time.AfterFunc(time.Duration(manager.maxLifeTime), func() {
+	//	manager.GC()
+	//})
 
 }

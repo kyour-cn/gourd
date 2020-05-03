@@ -2,7 +2,11 @@ package memory
 
 import (
 	"container/list"
+	"encoding/gob"
+	"errors"
 	"github.com/kyour-cn/gourd/server/session"
+	"io"
+	"os"
 	"sync"
 	"time"
 )
@@ -127,4 +131,77 @@ func (frommemory *FromMemory) SessionUpdate(sid string) error {
 		return nil
 	}
 	return nil
+}
+
+// 将缓存数据项写入到 io.Writer 中
+func (fm *FromMemory) save(w io.Writer) (err error) {
+
+	enc := gob.NewEncoder(w)
+	defer func() {
+		if x := recover(); x != nil {
+			err = errors.New("Error registering item types with Gob library")
+		}
+	}()
+
+	fm.lock.Lock()
+	for _, v := range fm.sessions {
+		gob.Register(v.Value)
+	}
+	err = enc.Encode(&fm.sessions)
+	fm.lock.Unlock()
+
+	return
+}
+
+// 保存数据项到文件中
+func (fm *FromMemory) SaveToFile(file string) error {
+
+	f, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	if err = fm.save(f); err != nil {
+		_ = f.Close()
+		return err
+	}
+	return f.Close()
+}
+
+// 从 io.Reader 中读取数据项
+func (c *FromMemory) load(r io.Reader) error {
+
+	dec := gob.NewDecoder(r)
+	items := map[string]*list.Element{}
+	err := dec.Decode(&items)
+	if err == nil {
+
+		c.lock.Lock()
+
+		for k, v := range items {
+			_, ok := c.sessions[k]
+			if !ok {
+				c.sessions[k] = v
+			}
+		}
+		c.lock.Unlock()
+
+	}
+	return err
+}
+
+// 从文件中加载缓存数据项
+func (c *FromMemory) LoadFile(file string) error {
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	if err = c.load(f); err != nil {
+		_ = f.Close()
+		return err
+	}
+	return f.Close()
 }
