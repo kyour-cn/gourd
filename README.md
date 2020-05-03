@@ -16,9 +16,20 @@ Gourd is a Golang Net development framework.
 * 快速上手开发应用
 * 内置Websocket和TcpSocket连接池管理
 * 内置Websocket和TcpSocket事件回调
+* 内存缓存和Session
+* 定时任务
 
-## 安装
-在命令行输入 `go get github.com/kyour-cn/gourd` 下载
+## 开始使用
+> git下载
+> 在命令行中运行  
+ `git clone https://github.com/kyour-cn/gourd-widget.git`
+
+>前往Github下载  
+[https://github.com/kyour-cn/gourd-widget](https://github.com/kyour-cn/gourd-widget)
+
+
+> zip下载  
+> [点击下载](https://github.com/kyour-cn/gourd-widget/archive/master.zip)
 
 ## 参与开发
 
