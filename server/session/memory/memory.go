@@ -3,9 +3,8 @@ package memory
 import (
 	"container/list"
 	"encoding/gob"
-	"errors"
-	"github.com/kyour-cn/gourd/server/session"
 	"io"
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -15,11 +14,21 @@ var pder = &FromMemory{list: list.New()}
 
 func init() {
 
-	pder.sessions = make(map[string]*list.Element, 0)
-	//注册  memory 调用的时候一定要一致
-	session.Register("memory", pder)
+	//pder.sessions = make(map[string]*list.Element, 0)
+	////注册  memory 调用的时候一定要一致
+	//session.Register("memory", pder)
 
 }
+
+//Session操作接口
+//type Session interface {
+//	Set(key, value interface{}) error
+//	Get(key interface{}) interface{}
+//	GetAll() interface{}
+//	Delete(ket interface{}) error
+//	Clear() error
+//	SessionID() string
+//}
 
 //session实现
 type SessionStore struct {
@@ -69,26 +78,34 @@ func (st *SessionStore) SessionID() string {
 	return st.sid
 }
 
+//新建内存容器
+func NewFromMemory() *FromMemory {
+
+	pder.sessions = make(map[string]*SessionStore, 0)
+
+	return pder
+}
+
 //session来自内存 实现
 type FromMemory struct {
 	lock     sync.Mutex               //用来锁
-	sessions map[string]*list.Element //用来存储在内存
+	sessions map[string]*SessionStore //用来存储在内存
 	list     *list.List               //用来做 gc
 }
 
-func (frommemory *FromMemory) SessionInit(sid string) (session.Session, error) {
+func (frommemory *FromMemory) SessionInit(sid string) (SessionStore, error) {
 	frommemory.lock.Lock()
 	defer frommemory.lock.Unlock()
 	v := make(map[interface{}]interface{}, 0)
-	newsess := &SessionStore{sid: sid, LastAccessedTime: time.Now(), value: v}
-	element := frommemory.list.PushBack(newsess)
-	frommemory.sessions[sid] = element
+	newsess := SessionStore{sid: sid, LastAccessedTime: time.Now(), value: v}
+
+	frommemory.sessions[sid] = &newsess
 	return newsess, nil
 }
 
-func (frommemory *FromMemory) SessionRead(sid string) (session.Session, error) {
+func (frommemory *FromMemory) SessionRead(sid string) (SessionStore, error) {
 	if element, ok := frommemory.sessions[sid]; ok {
-		return element.Value.(*SessionStore), nil
+		return *element, nil
 	} else {
 		sess, err := frommemory.SessionInit(sid)
 		return sess, err
@@ -96,9 +113,8 @@ func (frommemory *FromMemory) SessionRead(sid string) (session.Session, error) {
 }
 
 func (frommemory *FromMemory) SessionDestroy(sid string) error {
-	if element, ok := frommemory.sessions[sid]; ok {
+	if _, ok := frommemory.sessions[sid]; ok {
 		delete(frommemory.sessions, sid)
-		frommemory.list.Remove(element)
 		return nil
 	}
 	return nil
@@ -126,8 +142,7 @@ func (frommemory *FromMemory) SessionUpdate(sid string) error {
 	frommemory.lock.Lock()
 	defer frommemory.lock.Unlock()
 	if element, ok := frommemory.sessions[sid]; ok {
-		element.Value.(*SessionStore).LastAccessedTime = time.Now()
-		frommemory.list.MoveToFront(element)
+		element.LastAccessedTime = time.Now()
 		return nil
 	}
 	return nil
@@ -137,16 +152,27 @@ func (frommemory *FromMemory) SessionUpdate(sid string) error {
 func (fm *FromMemory) save(w io.Writer) (err error) {
 
 	enc := gob.NewEncoder(w)
-	defer func() {
-		if x := recover(); x != nil {
-			err = errors.New("Error registering item types with Gob library")
-		}
-	}()
+	//defer func() {
+	//	if x := recover(); x != nil {
+	//		err = errors.New("Error registering item types with Gob library")
+	//	}
+	//	fm.lock.Unlock()
+	//}()
 
 	fm.lock.Lock()
-	for _, v := range fm.sessions {
-		gob.Register(v.Value)
-	}
+	//for _, v := range fm.sessions {
+	//	gob.Register(v)
+	//	break
+	//}
+	//gob.Register(SessionStore{})
+
+	//v := make(map[interface{}]interface{}, 0)
+	//newsess := SessionStore{value: v}
+	//gob.Register(newsess)
+
+	//gob.RegisterName("*memory.SessionStore", SessionStore{})
+	gob.Register(map[interface{}]interface{}{})
+
 	err = enc.Encode(&fm.sessions)
 	fm.lock.Unlock()
 
@@ -168,38 +194,49 @@ func (fm *FromMemory) SaveToFile(file string) error {
 }
 
 // 从 io.Reader 中读取数据项
-func (c *FromMemory) load(r io.Reader) error {
+func (fm *FromMemory) load(r io.Reader) error {
 
 	dec := gob.NewDecoder(r)
-	items := map[string]*list.Element{}
+
+	//注册数据接口类型
+	//gob.RegisterName("*memory.SessionStore", SessionStore{})
+	//gob.RegisterName("SessionStore", SessionStore{})
+
+	gob.Register(map[interface{}]interface{}{})
+
+	gob.Register(SessionStore{})
+
+	items := map[string]*SessionStore{}
 	err := dec.Decode(&items)
 	if err == nil {
 
-		c.lock.Lock()
+		fm.lock.Lock()
+		defer fm.lock.Unlock()
 
 		for k, v := range items {
-			_, ok := c.sessions[k]
+			_, ok := fm.sessions[k]
 			if !ok {
-				c.sessions[k] = v
+				log.Printf("Read Session:%v", v)
+				fm.sessions[k] = v
 			}
 		}
-		c.lock.Unlock()
+		//c.lock.Unlock()
 
 	}
 	return err
 }
 
 // 从文件中加载缓存数据项
-func (c *FromMemory) LoadFile(file string) error {
+func (fm *FromMemory) LoadFile(file string) error {
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	//fm.lock.Lock()
+	//defer fm.lock.Unlock()
 
 	f, err := os.Open(file)
 	if err != nil {
 		return err
 	}
-	if err = c.load(f); err != nil {
+	if err = fm.load(f); err != nil {
 		_ = f.Close()
 		return err
 	}

@@ -10,20 +10,12 @@ package middleware
  */
 
 import (
-	"github.com/kyour-cn/gourd/server/session"
 	"log"
 	"net/http"
 )
 
 type Handler struct {
 	http.Handler
-}
-
-//http上下文
-type HttpContext struct {
-	Response *Response
-	Request  *Request
-	Session  *session.Session
 }
 
 //响应

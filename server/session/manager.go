@@ -15,7 +15,9 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"github.com/kyour-cn/gourd/common"
+	"github.com/kyour-cn/gourd/server/session/memory"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -26,36 +28,26 @@ var manager *Manager
 var config Config
 
 //session存储方式接口
-type Provider interface {
-	//初始化一个session，sid根据需要生成后传入
-	SessionInit(sid string) (Session, error)
-	//根据sid,获取session
-	SessionRead(sid string) (Session, error)
-	//销毁session
-	SessionDestroy(sid string) error
-	//回收
-	SessionGC(maxLifeTime int64)
-	//保存到文件
-	SaveToFile(path string) error
-	//从文件加载
-	LoadFile(file string) error
-}
-
-//Session操作接口
-type Session interface {
-	Set(key, value interface{}) error
-	Get(key interface{}) interface{}
-	GetAll() interface{}
-	Delete(ket interface{}) error
-	Clear() error
-	SessionID() string
-}
+//type Provider interface {
+//	//初始化一个session，sid根据需要生成后传入
+//	SessionInit(sid string) (Session, error)
+//	//根据sid,获取session
+//	SessionRead(sid string) (Session, error)
+//	//销毁session
+//	SessionDestroy(sid string) error
+//	//回收
+//	SessionGC(maxLifeTime int64)
+//	//保存到文件
+//	SaveToFile(path string) error
+//	//从文件加载
+//	LoadFile(file string) error
+//}
 
 type Manager struct {
 	cookieName  string
-	lock        sync.Mutex //互斥锁
-	provider    Provider   //存储session方式
-	maxLifeTime int64      //有效期
+	lock        sync.Mutex         //互斥锁
+	provider    *memory.FromMemory //存储session方式
+	maxLifeTime int64              //有效期
 }
 
 type Config struct {
@@ -79,11 +71,18 @@ func Init() {
 		return
 	}
 
-	provide, _ := provides["memory"]
+	//provide, _ := provides["memory"]
 
-	manager = &Manager{cookieName: config.Sessname, provider: provide, maxLifeTime: int64(time.Duration(config.Expiration) * time.Second)}
+	fm := memory.NewFromMemory()
 
-	_ = manager.provider.LoadFile(config.SaveFile)
+	manager = &Manager{cookieName: config.Sessname, provider: fm, maxLifeTime: int64(time.Duration(config.Expiration) * time.Second)}
+
+	if config.SaveFile != "" {
+		err := manager.provider.LoadFile(config.SaveFile)
+		if err != nil {
+			log.Printf("Session LoadFile Err:%v", err)
+		}
+	}
 
 	go manager.GC()
 
@@ -102,7 +101,7 @@ func Init() {
 
 //Session中间件
 //判断当前请求的cookie中是否存在有效的session，存在返回，否则创建
-func GetSession(w http.ResponseWriter, r *http.Request) (session Session) {
+func GetSession(w http.ResponseWriter, r *http.Request) (session memory.SessionStore) {
 
 	manager.lock.Lock() //加锁
 	defer manager.lock.Unlock()
@@ -138,8 +137,9 @@ func GetSession(w http.ResponseWriter, r *http.Request) (session Session) {
 	return session
 }
 
+/*
 //注册 由实现Provider接口的结构体调用
-func Register(name string, provide Provider) {
+func Register(name string, provide memory.FromMemory) {
 
 	if provide == nil {
 		panic("session: Register provide is nil")
@@ -161,7 +161,9 @@ func Register(name string, provide Provider) {
 
 }
 
-var provides = make(map[string]Provider)
+*/
+
+//var provides = make(map[string]memory.FromMemory)
 
 //生成sessionId
 func (manager *Manager) sessionId() string {
@@ -215,7 +217,11 @@ func (manager *Manager) GC() {
 				manager.lock.Lock()
 
 				manager.provider.SessionGC(int64(time.Duration(config.SaveCycle) * time.Second))
-				_ = manager.provider.SaveToFile(config.SaveFile)
+
+				if config.SaveFile != "" {
+					_ = manager.provider.SaveToFile(config.SaveFile)
+					//log.Printf("保存Session:%v", err)
+				}
 
 				manager.lock.Unlock()
 
