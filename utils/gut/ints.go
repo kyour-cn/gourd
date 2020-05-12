@@ -16,7 +16,18 @@ func Int2str(i int) string {
 	return strconv.Itoa(i)
 }
 
-//字符串装int
-func Str2int(s string) (int, error) {
-	return strconv.Atoi(s)
+//字符串转int
+func Str2int(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	return i
+}
+
+//字符串转uint
+func Str2uint(s string) uint {
+
+	return uint(Str2int(s))
+
 }

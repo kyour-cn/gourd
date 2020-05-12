@@ -54,15 +54,17 @@ func Init() {
 		//创建缓存对象
 		Obj = *NewCache(time.Duration(config.Expiration)*time.Second, time.Duration(config.SavefileCycle)*time.Second, config.SavefilePath)
 
-		exist, err := gut.PathExists(config.SavefilePath)
-		if err != nil {
-			log.Printf("Cache PathExists Error：%v\n", err)
-		}
-		if exist {
-			//读取文件
-			err = Obj.LoadFile(config.SavefilePath)
+		if config.SavefilePath != "" {
+			exist, err := gut.PathExists(config.SavefilePath)
 			if err != nil {
-				log.Printf("Cache Error:%v\n", err)
+				log.Printf("Cache PathExists Error：%v\n", err)
+			}
+			if exist {
+				//读取文件
+				err = Obj.LoadFile(config.SavefilePath)
+				if err != nil {
+					log.Printf("Cache Error:%v\n", err)
+				}
 			}
 		}
 
@@ -116,11 +118,11 @@ func Init() {
 }
 
 //设置数据
-func Set(k string, v interface{}, d time.Duration) {
+func Set(k string, v interface{}, second int) {
 
 	Init()
 
-	Obj.Set(k, v, d)
+	Obj.Set(k, v, time.Duration(second)*time.Second)
 
 	//如果实时保存
 	if config.RealtimeSave {
@@ -141,11 +143,11 @@ func Get(key string) (interface{}, bool) {
 
 }
 
-func Add(k string, v interface{}, d time.Duration) (err error) {
+func Add(k string, v interface{}, second int) (err error) {
 
 	Init()
 
-	err = Obj.Add(k, v, d)
+	err = Obj.Add(k, v, time.Duration(second)*time.Second)
 
 	//如果实时保存
 	if config.RealtimeSave {

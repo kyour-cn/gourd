@@ -75,7 +75,7 @@ func Init() {
 
 	fm := memory.NewFromMemory()
 
-	manager = &Manager{cookieName: config.Sessname, provider: fm, maxLifeTime: int64(time.Duration(config.Expiration) * time.Second)}
+	manager = &Manager{cookieName: config.Sessname, provider: fm, maxLifeTime: int64(config.Expiration)}
 
 	if config.SaveFile != "" {
 		err := manager.provider.LoadFile(config.SaveFile)
@@ -84,7 +84,7 @@ func Init() {
 		}
 	}
 
-	go manager.GC()
+	manager.GC()
 
 }
 
@@ -124,6 +124,8 @@ func GetSession(w http.ResponseWriter, r *http.Request) (session memory.SessionS
 			// 如果可以，应该使用MaxAge设置过期时间，但有些老版本的浏览器不支持MaxAge。
 			// 如果要支持所有浏览器，要么使用Expires，要么同时使用MaxAge和Expires。
 		}
+
+		//log.Printf("过期：%v", time.Now().Add(time.Duration(manager.maxLifeTime)))
 
 		http.SetCookie(w, &cookie)
 
@@ -210,6 +212,7 @@ func (manager *Manager) SessionDestroy(w http.ResponseWriter, r *http.Request) {
 func (manager *Manager) GC() {
 
 	go func() {
+
 		tick := time.NewTicker(time.Duration(config.SaveCycle) * time.Second)
 		for {
 			select {

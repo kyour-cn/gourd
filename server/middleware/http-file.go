@@ -47,3 +47,22 @@ func FileMiddleware(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path)
 
 }
+
+/*
+func File(url string) http.Handler {
+
+	//获取App配置
+	var config application.Config
+
+	_ = common.ReadConfig("app", &config)
+
+	var dir string
+
+	flag.StringVar(&dir, "dir", config.Http.Path, "the directory to serve files from. Defaults to the current dir")
+	flag.Parse()
+
+	return http.StripPrefix(url, http.FileServer(http.Dir(dir)))
+
+}
+
+*/

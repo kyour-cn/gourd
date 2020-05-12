@@ -132,6 +132,7 @@ func (frommemory *FromMemory) SessionGC(maxLifeTime int64) {
 			time.Now().Unix() {
 			frommemory.list.Remove(element)
 			delete(frommemory.sessions, element.Value.(*SessionStore).sid)
+			//log.Printf("session'过期")
 		} else {
 			break
 		}

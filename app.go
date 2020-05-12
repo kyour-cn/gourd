@@ -16,6 +16,7 @@ import (
 	app_http "github.com/kyour-cn/gourd/application/app-http"
 	app_tcp "github.com/kyour-cn/gourd/application/app-tcp"
 	"github.com/kyour-cn/gourd/common"
+	"github.com/kyour-cn/gourd/server/db"
 	"github.com/kyour-cn/gourd/server/router"
 	"github.com/kyour-cn/gourd/server/tcp"
 	"github.com/kyour-cn/gourd/utils/cache"
@@ -38,7 +39,7 @@ _____/\\\\\\\\\\\\_________________________________________________/\\\__
 
                              SERVER INFORMATION(v%s)
   *********************************************************************************
-  * Http | Ws | Enabled：%v Listen: %v
+  * http | Ws | Enabled：%v Listen: %v
   * TCP       | Enabled：%v Listen: %s
   *********************************************************************************
 `
@@ -96,6 +97,12 @@ func (app *Application) Serve() {
 		errors = append(errors, err)
 	}
 
+	//初始化缓存
+	cache.Init()
+
+	//初始化数据库
+	db.InitDb()
+
 	//启动http\ws服务
 	if config.Http.Enable {
 		go func() {
@@ -115,9 +122,6 @@ func (app *Application) Serve() {
 			}
 		}()
 	}
-
-	//初始化缓存
-	cache.Init()
 
 	//启动Crontab任务
 	app_cron.Start()

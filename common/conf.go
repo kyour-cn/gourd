@@ -20,6 +20,8 @@ func SetConfigPath(path string) {
 //取得配置
 func ReadConfig(name string, v interface{}) error {
 
+	configPath = "./conf/"
+
 	file := configPath + name + ".conf"
 
 	//log.Printf("Config:%v", file)

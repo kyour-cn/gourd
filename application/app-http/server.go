@@ -15,6 +15,7 @@ import (
 	"github.com/kyour-cn/gourd/server/router"
 	"github.com/kyour-cn/gourd/server/session"
 	_ "github.com/kyour-cn/gourd/server/session/memory"
+	"mime"
 	"net/http"
 	"time"
 )
@@ -29,9 +30,14 @@ func Serve(config *application.HttpConfig, router *router.Router) (error error) 
 	//初始化Session -暂时放这里
 	session.Init()
 
+	//注册中间件
 	//router.Use()
 
-	//hh := middleware.Handler{}
+	//静态资源mime定义
+	_ = mime.AddExtensionType(".js", "text/javascript")
+	_ = mime.AddExtensionType(".html", "text/html; charset=utf-8")
+	_ = mime.AddExtensionType(".htm", "text/html; charset=utf-8")
+	_ = mime.AddExtensionType(".css", "text/css")
 
 	for _, addr := range config.Addr {
 		//监听多个地址
