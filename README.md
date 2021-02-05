@@ -2,6 +2,8 @@
 Gourd 0.1 Beta 2020
 ===============
 
+> 该项目已经终止，因为精力有限，运行会发生阻塞，不再维护
+
 Gourd is a Golang Net development framework.
 
 > **中文 | [English](README.en.md)**
